@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrotech: MR297 Paddy Growth Model</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .math-block { font-family: 'Courier New', Courier, monospace; }
+        /* Smooth transition for the results box */
+        #result-container { transition: all 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen p-4 md:p-8">
+
+    <main class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header Section -->
+        <header class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-8">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-3xl">🌾</span>
+                <span class="bg-emerald-800 text-emerald-100 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">SFA: Agrotech Module</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold mb-3">MR297 Paddy Growth & Derivative Analysis</h1>
+            <p class="text-emerald-100 text-lg max-w-3xl">
+                Applying calculus to agronomy: Use the derivative \( f'(x) \) to determine the optimal day for Nitrogen fertilizer application based on the Crop Growth Rate.
+            </p>
+        </header>
+
+        <div class="p-8">
+            <!-- Bioscience Context -->
+            <section class="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-r-lg mb-8 text-slate-700">
+                <h2 class="text-xl font-bold text-emerald-800 mb-2">The Bioscience Problem</h2>
+                <p class="mb-3">
+                    To maximize the yield of MARDI's <strong>MR297</strong> paddy variety, farmers need to know when the crop is growing at its fastest rate. Total dry biomass accumulation follows an S-shaped <em>Logistic Growth Curve</em>. 
+                </p>
+                <p class="mb-3">
+                    While the original function \( f(x) \) tells us the total mass, calculating its <strong>derivative \( f'(x) \)</strong> gives us the <strong>Crop Growth Rate (CGR)</strong> in grams per square meter per day. Finding the peak CGR reveals the optimal window for applying top-dressing fertilizer (like Urea). Data profile simulated based on standard MARDI MR297 field trial patterns.
+                </p>
+            </section>
+
+            <!-- Mathematical Formulas -->
+            <section class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-700 mb-3 flex justify-between">
+                        <span>1. Total Biomass Function</span>
+                        <span class="text-emerald-600">f(x)</span>
+                    </h3>
+                    <div class="math-block bg-white p-4 rounded border text-center text-lg overflow-x-auto shadow-inner">
+                        f(x) = L / (1 + e<sup>-k(x - x₀)</sup>)
+                    </div>
+                    <ul class="text-sm mt-3 text-slate-600 space-y-1">
+                        <li><strong>x:</strong> Days After Transplanting (DAT)</li>
+                        <li><strong>L:</strong> Max Biomass Limit (1600 g/m²)</li>
+                        <li><strong>k:</strong> Growth Constant (0.12)</li>
+                        <li><strong>x₀:</strong> Day of maximum growth (Day 55)</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-700 mb-3 flex justify-between">
+                        <span>2. Crop Growth Rate (Derivative)</span>
+                        <span class="text-teal-600">f'(x)</span>
+                    </h3>
+                    <div class="math-block bg-white p-4 rounded border text-center text-lg overflow-x-auto shadow-inner">
+                        f'(x) = [L · k · e<sup>-k(x - x₀)</sup>] / [1 + e<sup>-k(x - x₀)</sup>]²
+                    </div>
+                    <p class="text-sm mt-3 text-slate-600">
+                        This derivative calculates the slope of the biomass curve at any given day. It tells us exactly how many grams of new mass the crop is adding <em>per day</em>.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Interactive Chart Area -->
+            <section class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-slate-800">Interactive Growth Model</h2>
+                    <span class="animate-pulse bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-300">
+                        👆 Click the graph!
+                    </span>
+                </div>
+                
+                <div class="relative w-full h-[400px] bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Dynamic Result Box (Updates on Click) -->
+            <section id="result-container" class="bg-slate-800 text-white rounded-xl p-6 shadow-lg min-h-[120px] flex items-center border-l-8 border-slate-600">
+                <div id="result-content" class="w-full">
+                    <div class="text-center text-slate-300 text-lg flex flex-col items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                        </svg>
+                        Interact with the data: Click anywhere on the curve above to calculate the derivative \( f'(x) \) at that specific day.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="text-center text-slate-500 text-sm mt-8 pb-8">
+        Designed for SFA Agrotech curriculum demonstration purposes in Malaysia.
+    </footer>
+
+    <script>
+        // --- 1. Bioscience Mathematical Model Constants ---
+        // Based on logistic growth of high-yield MR297 paddy.
+        const L = 1600;  // Maximum dry biomass capacity in g/m^2
+        const k = 0.12;  // Growth rate constant (steepness)
+        const x0 = 55;   // The inflection point (Day 55, Panicle Initiation stage)
+
+        // --- 2. Defining the Functions ---
+        
+        // Function f(x): Total Biomass
+        function calcBiomass(x) {
+            return L / (1 + Math.exp(-k * (x - x0)));
+        }
+
+        // Function f'(x): Derivative (Crop Growth Rate)
+        function calcDerivative(x) {
+            const expTerm = Math.exp(-k * (x - x0));
+            const numerator = L * k * expTerm;
+            const denominator = Math.pow(1 + expTerm, 2);
+            return numerator / denominator;
+        }
+
+        // --- 3. Generating the Dataset ---
+        const days = [];        // X-axis: Days After Transplanting (DAT)
+        const biomassData = []; // Y-axis: f(x)
+        const maxDays = 110;    // Harvest usually around 105-110 days for MR297
+
+        // Generate a data point every 2 days for a smooth curve
+        for (let x = 0; x <= maxDays; x += 2) {
+            days.push(x);
+            biomassData.push(calcBiomass(x));
+        }
+
+        // --- 4. Chart.js Initialization ---
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        
+        // Create gradient for the line fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)'); // Emerald 500 transparent
+        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+        const growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: [{
+                    label: 'Total Dry Biomass f(x) (g/m²)',
+                    data: biomassData,
+                    borderColor: '#059669', // Emerald 600
+                    backgroundColor: gradient,
+                    borderWidth: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#059669',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 8,
+                    pointHoverBackgroundColor: '#10b981',
+                    fill: true,
+                    tension: 0.4 // Smooth bezier curve
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                },
+                interaction: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    x: {
+                        title: { 
+                            display: true, 
+                            text: 'Days After Transplanting (DAT)',
+                            font: { family: 'Inter', weight: 'bold', size: 14 }
+                        },
+                        grid: { borderDash: [5, 5] }
+                    },
+                    y: {
+                        title: { 
+                            display: true, 
+                            text: 'Dry Biomass (g/m²)',
+                            font: { family: 'Inter', weight: 'bold', size: 14 }
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 1700,
+                        grid: { borderDash: [5, 5] }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { family: 'Inter', size: 14 },
+                        bodyFont: { family: 'Inter', size: 14 },
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return `Total Mass: ${context.parsed.y.toFixed(1)} g/m²`;
+                            }
+                        }
+                    }
+                },
+                
+                // --- 5. Interactive Click Event ---
+                onClick: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const dataIndex = activeElements[0].index;
+                        const selectedDay = growthChart.data.labels[dataIndex];
+                        
+                        // Execute the derivative calculation at exactly point x
+                        const rateOfChange = calcDerivative(selectedDay);
+                        
+                        // Update the UI
+                        displayLaymanExplanation(selectedDay, rateOfChange);
+                    }
+                }
+            }
+        });
+
+        // --- 6. Layman Explanation Logic ---
+        function displayLaymanExplanation(day, rate) {
+            const container = document.getElementById('result-container');
+            const content = document.getElementById('result-content');
+            
+            let phaseTitle = "";
+            let explanationText = "";
+            let borderColor = "";
+
+            // Agronomy logic based on the day and rate of change
+            if (day < 25) {
+                phaseTitle = "Early Tillering Stage 🌱";
+                explanationText = "The crop is young and establishing its root system. The rate of new growth is slow, so heavy fertilization now might wash away before the plant can use it.";
+                borderColor = "border-blue-400";
+            } else if (day >= 25 && day < 45) {
+                phaseTitle = "Active Tillering 🌿";
+                explanationText = "Growth is accelerating rapidly! The plant is aggressively building new leaves and stems. Nutrient demand is increasing daily.";
+                borderColor = "border-yellow-400";
+            } else if (day >= 45 && day <= 65) {
+                phaseTitle = "Panicle Initiation & Booting (PEAK GROWTH!) 🚨";
+                explanationText = "The derivative is near its absolute maximum. The plant is adding mass faster than at any other time in its lifecycle. <strong>This is the optimal window for Nitrogen top-dressing</strong> to ensure high grain yield.";
+                borderColor = "border-rose-500";
+            } else if (day > 65 && day < 95) {
+                phaseTitle = "Heading & Grain Filling 🌾";
+                explanationText = "While total biomass is very high, the <em>rate of new growth</em> is dropping significantly. The plant's energy is shifting from building leaves to filling the rice grains.";
+                borderColor = "border-amber-500";
+            } else {
+                phaseTitle = "Maturation & Ripening 🚜";
+                explanationText = "The derivative approaches zero. The plant has stopped growing and is drying out, preparing for harvest time.";
+                borderColor = "border-slate-400";
+            }
+
+            // Flash effect on the container
+            container.classList.remove('border-slate-600', 'border-blue-400', 'border-yellow-400', 'border-rose-500', 'border-amber-500', 'border-slate-400');
+            container.classList.add(borderColor);
+            container.style.transform = 'scale(1.02)';
+            setTimeout(() => { container.style.transform = 'scale(1)'; }, 200);
+
+            // Output the math and explanation
+            content.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    <div class="flex-shrink-0 bg-slate-900 p-4 rounded-lg text-center min-w-[200px]">
+                        <div class="text-slate-400 text-sm font-bold uppercase tracking-wide mb-1">Calculated Derivative</div>
+                        <div class="text-3xl font-bold text-teal-400">f'(${day})</div>
+                        <div class="mt-2 text-xl font-mono text-white">${rate.toFixed(2)}</div>
+                        <div class="text-xs text-slate-400 mt-1">g/m² per day</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="text-xl font-bold text-white mb-2">${phaseTitle}</h4>
+                        <p class="text-slate-300 leading-relaxed text-lg mb-3">
+                            At <strong>Day ${day}</strong> after transplanting, the MR297 crop is gaining exactly <strong>${rate.toFixed(2)} grams</strong> of new mass per square meter every single day.
+                        </p>
+                        <p class="text-emerald-300 font-semibold bg-emerald-900/30 p-3 rounded border border-emerald-800/50">
+                            👨‍🌾 <strong>Agronomist's Translation:</strong> ${explanationText}
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
